@@ -6,12 +6,12 @@ require '../class/day.php';
 require '../template/calendar.php';
 
 // kontrola statusu prihláseného používateľa
-$my_account = User::login(1);
+$my_account = User::login(User::STATUS_REGULAR);
 $personal_id = $my_account->id;
 $user = $my_account;
 
 // pridavanie zapisu pre niekoho ineho (ak si sekretar)
-if ( post(["personal_id"]) && $my_account->status == 2 && intval(post("personal_id")) > 0 ) {
+if ( post(["personal_id"]) && $my_account->secretary && intval(post("personal_id")) > 0 ) {
   $personal_id = intval( post("personal_id") );
   $user = User::get( $personal_id );
 }
@@ -20,9 +20,9 @@ if ( post(["personal_id"]) && $my_account->status == 2 && intval(post("personal_
 $year = get_year();
 $month = get_month();
 
-// SEKRETARIAT moze pridavat aj za ostatnich
+// SEKRETARIAT moze pridavat aj za ostatnych
 $admin_str = "";
-if ( $my_account->status == 2 ) {
+if ( $my_account->secretary ) {
   $admin_str = "Pridávate údaje pre používateľa: <b>$user->surname $user->name</b>";
 }
 
@@ -76,18 +76,29 @@ if ( post(["is_public", "type", "description"]) ) {
   }
 
   // skontroluje deadline
-  if ( !edit_date( $year, $month, $type ) && $my_account->status != 2 ){
-    echo message( "error", "<b>Chyba</b><br>Čas pre pridávanie / editovanie zvolenej absencie už vypršal." );
+  if ( !edit_date( $year, $month, $type ) && !$my_account->secretary ){
+    echo message( "error", "<b>Neprítomnosť nemožno zaevidovať</b><br>
+        Čas na pridávanie/editovanie zvoleného druhu neprítomnosti už vypršal. Kontaktujte pani sekretárku." );
   }
   // ak je to dovolenka, skontroluje či má dostatok volnej dovolenky
-  else if ( $type == 3 && $my_account->holidays_budget < $my_account->holidays_spend + $holidays_num ) {
-    echo message( "error", "<b>Chyba</b><br>Nemáte požadovaný počet voľných dovolenkových dní." );
+  else if ( $type == ABSENCE_HOLIDAY && $user->get_holiday_allowance($year) === NULL && $month != 1 ) {
+    echo message( "error", "<b>Dovolenku nemožno zaevidovať</b><br>
+        Pre rok $year ešte táto aplikácia nepozná váš nárok na dovolenku. Môžete žiadať iba o&nbsp;januárovú dovolenku." );
+  }
+  else if ( $type == ABSENCE_HOLIDAY && $user->get_holiday_allowance($year) !== NULL &&
+            $user->get_holiday_allowance($year) < $user->get_holiday_spent($year) + $holidays_num ) {
+    $remaining = $user->get_holiday_allowance($year) - $user->get_holiday_spent($year);
+    echo message( "error", "<b>Dovolenku nemožno zaevidovať</b><br>
+        Požadovaný počet dovolenkových dní ($holidays_num) prekračuje váš zostatok ($remaining) pre rok $year." );
   }
   // ak je všetko v poriadku zapíš neprítomnosť
   else {
     foreach ( $days as $d ) {
       $result = $d->set( $type, $public, $description, $from_time, $to_time );
       if ( $result ) $d->insert();
+    }
+    if ( $type == ABSENCE_HOLIDAY && $user->get_holiday_allowance($year) === NULL ) {
+      echo message( "info", "<b>Zapísali ste si dovolenku na rok $year, pre ktorý táto aplikácia ešte nepozná váš nárok na dovolenku.</b><br/>Uistite sa, že ste svoj nárok neprekročili." );
     }
     echo print_calendar_inserted_script ($year, $month, $user->personal_id);
   }
@@ -106,7 +117,7 @@ else {
   $types_str = "";
   foreach ( $sk_types as $key => $value ) {
     $ch = "";
-    if ( $key == 1 ) $ch = "checked";
+    if ( $key == ABSENCE_HOLIDAY ) $ch = "checked";
     $types_str .= print_calendar_set_form_types ( $key, $value, $ch );
   }
 

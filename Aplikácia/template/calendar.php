@@ -9,7 +9,7 @@ function print_calendar($year, $month) {
 }
 
 function print_calendar_holidays_empty () {
-  return "<div class='empty'>V tomto mesiaci nemáte zadanú žiadnu dovolenku...</div>";
+  return "<div class='empty'>V tomto mesiaci ste nežiadali o&nbsp;dovolenku.</div>";
 }
 
 function print_calendar_holidays_value ( $user, $year, $from_time, $to_time, $num_of_days, $request_date ) {
@@ -80,8 +80,8 @@ function print_calendar_set_form ( $count, $days, $single, $year, $month, $date1
   <div class='input_title'>Zverejnenie</div>
 
   <div class='input_value'>
-    <label><input type='radio' name='c_public' value='1' checked><span>Zverejniť</span></label>
-    <label><input type='radio' name='c_public' value='0'><span>Nezverejňovať</span></label>
+    <label><input type='radio' name='c_public' value='1'><span>Zverejniť</span></label>
+    <label><input type='radio' name='c_public' value='0' checked><span>Nezverejňovať</span></label>
   </div>
   <div class='spacer'></div>
 
@@ -116,25 +116,25 @@ function print_calendar_table_td ( $day, $class, $approved, $type ) {
   global $sk_types;
   $type_icon = "";
   switch ($type) {
-    case ABSENCE_SICK:
+    case ABSENCE_ILL:
       $type_icon = fa_icon("user-md", "fa-fw");
       break;
-    case ABSENCE_JOURNEY:
+    case ABSENCE_TRAVEL:
       $type_icon = fa_icon("briefcase", "fa-fw");
       break;
-    case ABSENCE_LEAVE:
+    case ABSENCE_HOLIDAY:
       $type_icon = fa_icon("plane", "fa-fw");
       break;
-    case ABSENCE_HOMEOFFICE:
+    case ABSENCE_WORKFROMHOME:
       $type_icon = fa_icon("home", "fa-fw");
       break;
     case ABSENCE_OTHER:
       $type_icon = fa_icon("ellipsis-h", "fa-fw");
       break;
-    case ABSENCE_MOTHER:
+    case ABSENCE_MATERNAL:
       $type_icon = fa_icon("female") . fa_icon("child", "small");
       break;
-    case ABSENCE_PARENT:
+    case ABSENCE_PARENTAL:
       $type_icon = fa_icon("female") . fa_icon("child", "small") . fa_icon("male");
       break;
   }
@@ -160,8 +160,8 @@ function print_calendar_table_tr ($data) {
   return "<tr>$data</tr>";
 }
 
-function print_calendar_holiday_script ( $spend ) {
-  return "<script>$('#holiday_spend').html('$spend');</script>";
+function print_calendar_holiday_script ( $remaining ) {
+  return "<script>$('#holiday_remaining').html('$remaining');</script>";
 }
 
 function print_calendar_table($y, $m, $yL, $mL, $yR, $mR, $data, $personal_id, $admin_str){

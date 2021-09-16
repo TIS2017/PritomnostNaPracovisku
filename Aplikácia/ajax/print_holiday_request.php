@@ -10,17 +10,6 @@ require '../template/calendar.php';
 function tex_safe_chars_only($string, $replacement = ' ') {
     return preg_replace('/[^.,:;!?(\[\])[:alnum:][:space:]—–-]/u', $replacement, $string);
 }
-function exec_or_die($cmd) {
-    $output = array();
-    $return_val = 0;
-    $lastline = exec($cmd, $output, $return_val);
-    if ($return_val != 0) {
-        header("HTTP/1.0 500 Internal server error");
-        echo(join("\n", array_map('htmlspecialchars', $output)));
-        exit($return_val);
-    }
-    return array($lastline, $output);
-}
 
 // kontrola statusu prihláseného používateľa
 $my_account = User::login(User::STATUS_REGULAR);
@@ -28,7 +17,7 @@ $personal_id = intval($my_account->personal_id);
 $user = $my_account;
 
 if ( post(["personal_id"]) &&
-    $my_account->status == User::STATUS_SECRETARY &&
+    $my_account->secretary &&
     intval(post("personal_id")) > 0 ) {
   $personal_id = intval( post("personal_id") );
   $user = User::get( $personal_id );
@@ -52,9 +41,11 @@ $texcmds = array_map(function ($key, $value) {
     },
     array_keys($data), $data);
 
-$jobname = preg_replace('/[^a-zA-Z0-9]/', '-', $user->username);
-list($tmpdir, $etc) =
-    exec_or_die("mktemp --directory --tmpdir pritomnost.$jobname.XXXXXXXXXX");
+$jobname = preg_replace('/[^a-zA-Z0-9]/u', '-', $user->username);
+list($tmpdir, $etc) = exec_or_die(
+    "mktemp",
+    ["--directory", "--tmpdir", "pritomnost.$jobname.XXXXXXXXXX"]
+);
 
 file_put_contents("$tmpdir/data.tex", $texcmds);
 
@@ -64,14 +55,13 @@ foreach ($printer_options as $opt) {
     $printer_option_args[] = $opt;
 }
 
-list($lastout, $etc) =
-    exec_or_die(
-        escapeshellcmd("../tools/dovolenkovy-listok.sh") . " " .
-        join(" ",
-            array_map('escapeshellarg', array_merge(
-                array($tmpdir, $jobname, $printer_host, $printer),
-                $printer_option_args
-            ))));
+list($lastout, $etc) = exec_or_die(
+    "../tools/dovolenkovy-listok.sh",
+    array_merge(
+        [$tmpdir, $jobname, $printer_host, $printer],
+        $printer_option_args
+    )
+);
 
-header('Content-Type: text/plain; charset=utf-8');
+set_plain_output();
 echo htmlspecialchars($lastout);

@@ -15,8 +15,9 @@ class User {
   var $email = "";
   var $last_login = "";
   var $holidays_budget = 0;
+  var $all_holiday_budgets = array();
   var $holidays_spend = 0;
-  var $user = false, $request_validator = false, $super_user = false, $admin = false;
+  var $user = false, $request_validator = false, $secretary = false, $admin = false, $privileged = false;
 
   static function get( $personal_id ) {
     global $conn, $request_validators;
@@ -35,20 +36,16 @@ class User {
       $user->last_login = $u['last_login'];
     }
 
-    $sql = $conn->query("SELECT from_time, to_time FROM absence WHERE user_id = '$user->id' AND YEAR(date_time) = YEAR(NOW()) AND type = '3'");
-    while ( $time = $sql->fetch_assoc() ) {
-      $user->holidays_spend += holiday_hours_interval( $time["from_time"], $time["to_time"] );
-    }
+    $user->holidays_spend = format_float_max2dp($user->get_holiday_spent());
+    $user->holidays_budget = format_float_max2dp($user->get_holiday_allowance());
+    $user->holiday_remaining =
+        format_float_max2dp($user->holidays_budget - $user->holidays_spend);
 
-    $sql = $conn->query("SELECT num FROM holidays_budget WHERE user_id = '$user->id' AND year = YEAR(NOW())");
-    if ( $n = $sql->fetch_assoc() )
-      $user->holidays_budget = $n["num"];
-
-    if ( $user->status > User::STATUS_DISABLED ) $user->user = true;
-    if ( $user->status == User::STATUS_SECRETARY ) $user->super_user = true;
-    if ( $user->status == User::STATUS_ADMINISTRATOR ) $user->admin = true;
-
-    if ( in_array($user->personal_id, $request_validators) ) $user->request_validator = true;
+    $user->user = ($user->status > User::STATUS_DISABLED);
+    $user->privileged = ($user->status > User::STATUS_REGULAR);
+    $user->secretary = ($user->status == User::STATUS_SECRETARY);
+    $user->admin = ($user->status == User::STATUS_ADMINISTRATOR);
+    $user->request_validator = in_array($user->personal_id, $request_validators);
 
     return $user;
   }
@@ -79,8 +76,18 @@ class User {
           $_SESSION["personal_id"] = $p_id;
           $_SESSION["token"] = $token;
           header('Location: index.php');
+          exit();
         }
       }
+      $_SESSION["message"] = [
+        "type" => "error",
+        "text" => "<b>Neúspešný pokus o prihlásenie.</b><br>
+          Zadali ste neplatné používateľské meno,
+          nesprávne heslo, alebo je váš účet deaktivovaný.",
+        "hidder" => true
+      ];
+      header('Location: index.php');
+      exit();
     }
 
     if ( session(["token", "personal_id"]) ) {
@@ -98,10 +105,27 @@ class User {
     if ( $user->status >= $security && ( !$request_validation || $user->request_validator ) )
       return $user;
     else {
+      $_SESSION["message"] = [
+        "type" => "error",
+        "text" => "<b>Prístup zamietnutý.</b><br>
+          Na prístup k požadovanej funkcii nemáte oprávnenie.",
+        "hidder" => true
+      ];
       header('Location: index.php');
       exit();
     }
     return $user;
+  }
+
+  static function get_users( $min_status = User::STATUS_REGULAR,
+                             $max_status = 10000 ) {
+    global $conn;
+    $stm = $conn->prepare("
+        SELECT id, personal_id, username, name, surname, email, status FROM users
+        WHERE status >= ? AND status < ?
+        ORDER BY surname");
+    if ( !$stm->bind_param("ii", $min_status, $max_status) ) return [];
+    return execute_stm_and_fetch_all( $stm );
   }
 
   static function create_all_users( $status = User::STATUS_REGULAR ) {
@@ -120,10 +144,48 @@ class User {
     return $arr;
   }
 
+  function get_holiday_spent($year = NULL) {
+    global $conn;
+
+    if ($year === NULL) {
+        $year = date("Y");
+    }
+    // suma dovolenkovych dni s presnostou na 1/4 dna (7200 sekund = 8 hodin/4)
+    // rata sa kazdy zacaty stvrtden (ceil)
+    $sql = $conn->query("SELECT CAST(SUM(CEIL(TIMESTAMPDIFF(SECOND, from_time, to_time) / 7200) / 4) AS DECIMAL(5,2)) AS days
+			 FROM absence WHERE user_id = '$this->id' AND YEAR(date_time) = $year AND type = '3'");
+    if ( $n = $sql->fetch_assoc() ) {
+      return $n["days"];
+    }
+    return NULL;
+  }
+
+  function get_holiday_allowance($year = NULL) {
+    global $conn;
+
+    if ($year === NULL) {
+        $year = date("Y");
+    }
+    if ( !array_key_exists($year, $this->all_holiday_budgets) ) {
+      $sql = $conn->query("SELECT num FROM holidays_budget WHERE user_id = '$this->id' AND year = '$year'");
+      if ( $n = $sql->fetch_assoc() ) {
+        $this->all_holiday_budgets[$year] = $n["num"];
+      } else {
+        $this->all_holiday_budgets[$year] = NULL;
+      }
+    }
+    return $this->all_holiday_budgets[$year];
+  }
+
   function holiday_budget_update() {
     global $conn, $actual_year;
 
     if ( $this->id == 0 ) return false;
+
+    // clear the cache
+    if ( array_key_exists($actual_year, $this->all_holiday_budgets) ) {
+      unset($this->all_holiday_budgets[$actual_year]);
+    }
 
     $sql = $conn->query( "SELECT * FROM holidays_budget WHERE user_id = '$this->id' AND year = '$actual_year'" );
 

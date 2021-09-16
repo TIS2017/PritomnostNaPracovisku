@@ -37,12 +37,14 @@ class Overview {
     while ( $a = $absences->fetch_assoc() ) {
         $day = new Day( $a["day"], $this->m, $this->y, $a["user_id"] );
 
-        if ( $day->public == 1 || $my_account->status > 0 ) {
-          if ( !isset( $this->days[ $a["day"] ] ) )
-            $this->days[ $a["day"] ] = [];
+        if (isset($my_account)) {
+          if ( $day->public == 1 || $my_account->user ) {
+            if ( !isset( $this->days[ $a["day"] ] ) )
+              $this->days[ $a["day"] ] = [];
 
-          if ( is_array($this->days[ $a["day"] ]) )
-            array_push( $this->days[ $a["day"] ], $day);
+            if ( is_array($this->days[ $a["day"] ]) )
+              array_push( $this->days[ $a["day"] ], $day);
+          }
         }
     }
 
@@ -55,10 +57,13 @@ class Overview {
 
     // zobrazit titulok s posuvacom mesiacov ??
     if ( $title ) {
-      list($year_minus, $month_minus) = month_minus($this->y, $this->m);
-      list($year_plus, $month_plus) = month_plus($this->y, $this->m);
       // vypis nazvu mesiaca a sipok
-      $str .= print_overview_title( $sk_months[ $this->m ], $this->y, $year_minus, $month_minus, $year_plus, $month_plus);
+      $str .= print_overview_title(
+        $this->m, $this->y,
+        // stiahnutie vykazu
+        ($my_account->secretary && $this->user_id == 0)
+          ? print_report_link( $this->m, $this->y )
+          : '');
       // vypis mena ak je zapnuty filter
       if ( $this->user_id != 0 )
         $str .= print_overview_filter ( $users[$this->user_id]->name, $users[$this->user_id]->surname );
@@ -76,8 +81,9 @@ class Overview {
         $vals = "";
 
         foreach ( $absences as $a ) {
-          // zobraz iba schvalen (alebo moje alebo admin)
-          if ( $a->confirmation || $my_account->id == $a->user_id || $my_account->super_user || $my_account->request_validator ) {
+          // zobraz iba schvalene (okrem mna, sekretarky a schvalovatela)
+          if ( $a->confirmation || $my_account->id == $a->user_id ||
+               $my_account->secretary || $my_account->request_validator ) {
             $state = "";
             if ( !$a->confirmation ) $state = " <strong>(zatiaľ neschválené)</strong>";
 
@@ -104,11 +110,44 @@ class Overview {
   function remove_button( $a, $name, $surname ) {
     global $my_account;
 
-    // button ukaz iba pri mojich udalostiach (alebo admin)
-    if ( ($my_account->id == $a->user_id || $my_account->super_user) && (edit_date( $a->year, $a->month, $a->type ) || $my_account->status == 2) )
+    if (!isset($my_account) || !isset($a)) return "";
+    // button ukaz iba pri mojich udalostiach (alebo sekretarke)
+    if ( ( $my_account->id == $a->user_id &&
+            edit_date( $a->year, $a->month, $a->type ) ) ||
+          $my_account->secretary ) {
       return print_overview_box_value_remove ( $this->y, $this->m, $name, $surname, $a->absence_id, $this->personal_id );
+    }
     return "";
   }
+
+  static function get_absences( $year, $month ) {
+    global $conn;
+    $stm = $conn->prepare("
+      SELECT user_id, DAY(date_time) as day, from_time, to_time,
+        type, description, public
+      FROM absence JOIN users ON user_id = users.id
+      WHERE YEAR(date_time) = ?
+        AND MONTH(date_time) = ?
+        AND users.status >= ?
+      ORDER BY user_id, date_time");
+    if ( !$stm ) return $conn->$error;
+    $regular = User::STATUS_REGULAR; // must be passable by reference
+    if ( !$stm || !$stm->bind_param("iii", $year, $month, $regular) )
+      return $conn->$error;
+    return execute_stm_and_fetch_all( $stm );
+  }
+
+  static function get_public_holidays( $year, $month ) {
+    global $conn;
+    $stm = $conn->prepare("
+      SELECT DAY(date_time) as day, description FROM holidays
+      WHERE YEAR(date_time) = ?
+        AND MONTH(date_time) = ?
+      ORDER BY date_time");
+    if ( !$stm->bind_param("ii", $year, $month) ) return [];
+    return execute_stm_and_fetch_all( $stm );
+  }
+
 }
 
 ?>

@@ -8,6 +8,16 @@ function sk_format_short_date( $date ) {
   return date("j. n.", strtotime( $date ) );
 }
 
+function format_float_max2dp( $days ) {
+  if (floor($days) == $days) {
+    return floor($days);
+  }
+  if (round($days*100) % 10 == 0) {
+    return sprintf("%.1f", $days);
+  }
+  return sprintf("%.2f", $days);
+}
+
 function sk_days( $num ) {
     if ($num == 1) {
         return "1 deň";
@@ -28,9 +38,6 @@ function display_time( $from, $to ) {
 }
 
 function message ( $type, $text, $hidder = 0 ) {
-  global $my_account;
-  if ( $my_account->status == 0 ) return "";
-
   $icon = "";
   if ( $type == "error" ) $icon = "fa-exclamation-triangle";
   if ( $type == "info" ) $icon = "fa-info-circle";
@@ -118,13 +125,34 @@ function first_char( $str ) {
 function edit_date( $y, $m, $type ) {
   global $deadline, $actual_year, $actual_month, $actual_day;
 
-  if ( $type == 1 || $type == 3 ) $protection = true;
+  if ( $type == ABSENCE_ILL || $type == ABSENCE_HOLIDAY ) $protection = true;
   else $protection = false;
 
   if ( $actual_year < $y ) return true;
   if ( $actual_year == $y && $m > $actual_month ) return true;
   if ( ($actual_year == $y && $m == $actual_month) && (!$protection || $actual_day <= $deadline) ) return true;
   return false;
+}
+
+function set_plain_output() {
+  header('Content-Type: text/plain; charset=UTF-8');
+}
+
+function exec_or_die($cmd, $args) {
+  $cmd = join(" ", array_merge(
+    [ escapeshellcmd($cmd) ],
+    array_map('escapeshellarg', $args)
+  ));
+  $output = array();
+  $return_val = 0;
+  $lastline = exec($cmd . ' 2>&1', $output, $return_val);
+  if ($return_val != 0) {
+    error_log("Failed to execute: $cmd");
+    error_log(join("\n", $output));
+    header("HTTP/1.0 500 Internal server error");
+    exit($return_val);
+  }
+  return array($lastline, $output);
 }
 
 ?>

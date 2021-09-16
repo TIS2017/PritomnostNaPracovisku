@@ -15,6 +15,7 @@ $printer_options = ['landscape', 'PageSize=A6'];
 
 $department = 'Katedra aplikovanej informatiky';
 $department_id = '107240';
+$personal_id_prefix = '107';
 
 $sk_months = ["", "Január", "Február", "Marec", "Apríl", "Máj", "Jún", "Júl", "August", "September", "Október", "November", "December"];
 $sk_days = ["", "Pondelok", "Utorok", "Streda", "Štvrtok", "Piatok", "Sobota", "Nedela"];
@@ -29,13 +30,13 @@ $sk_types = [
     7 => "Rodičovská dovolenka"
 ];
 
-const ABSENCE_SICK = 1;
-const ABSENCE_JOURNEY = 2;
-const ABSENCE_LEAVE = 3;
-const ABSENCE_HOMEOFFICE = 4;
+const ABSENCE_ILL = 1;
+const ABSENCE_TRAVEL = 2;
+const ABSENCE_HOLIDAY = 3;
+const ABSENCE_WORKFROMHOME = 4;
 const ABSENCE_OTHER = 5;
-const ABSENCE_MOTHER = 6;
-const ABSENCE_PARENT = 7;
+const ABSENCE_MATERNAL = 6;
+const ABSENCE_PARENTAL = 7;
 
 $actual_year = intval(date("Y"));
 $actual_month = intval(date("n"));
@@ -48,5 +49,6 @@ else $deadline = 20;
 function e($var) { echo $var; }
 
 require "functions.php";
+require "sha1sums.php";
 
 ?>

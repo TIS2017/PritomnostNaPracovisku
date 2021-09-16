@@ -1,10 +1,10 @@
 <?php
 
-function print_header_logged_on ( $name, $surname, $id, $holidays_spend, $holidays_budget ) {
+function print_header_logged_on ( $name, $surname, $id, $holiday_remaining, $holiday_allowance ) {
   return "
   <div class='logged_panel'>
-    <span class='name'>$name $surname <span>#$id</span></span>
-    <span title='Dovolenky'><span class='fa fa-plane'></span> <span id='holiday_spend'>$holidays_spend</span> / $holidays_budget</span>
+    <span class='name'>$name $surname <span class='personal_id'>#$id</span></span>
+    <span>Zostatok dovolenky: <span id='holiday_remaining'>$holiday_remaining</span> / $holiday_allowance</span>
     <a href='profile.php' title='Môj účet'><span class='fa fa-pencil-square-o'></span></a>
     <a href='?logout' title='Odhlásiť sa'><span class='fa fa-sign-out'></span></a>
   </div>
@@ -29,19 +29,22 @@ function print_header_logged_off() {
 }
 
 function print_header() {
-  global $my_account, $actual_year, $actual_month;
+  global $my_account, $actual_year, $actual_month, $sha1sums;
 
-  if ( $my_account->status > 0 ) $str = print_header_logged_on($my_account->name, $my_account->surname, $my_account->personal_id, $my_account->holidays_spend, $my_account->holidays_budget);
+  if ( $my_account->user ) $str = print_header_logged_on($my_account->name, $my_account->surname, $my_account->personal_id, $my_account->holiday_remaining, $my_account->holidays_budget);
   else $str = print_header_logged_off();
 
   $menu_items = array( 'index.php' => "Prehľad" );
-  if ( $my_account->status > 0 ) {
+  if ( $my_account->user ) {
     $menu_items['calendar.php'] = 'Vaša neprítomnosť';
   }
-  if ( $my_account->status >= 2 ) {
+  if ( $my_account->privileged ) {
     $menu_items['users.php'] = 'Používatelia';
     $menu_items['terms.php'] = 'Termíny';
-    $menu_items['events.php'] = 'Udalosti';
+    $menu_items['events.php'] = 'Voľné dni';
+  }
+  if ( $my_account->request_validator ) {
+    $menu_items['requests.php'] = 'Žiadosti';
   }
   $menu = join("\n",
     array_map( function($href, $label) {
@@ -49,7 +52,14 @@ function print_header() {
         ($href == basename($_SERVER['PHP_SELF']) ? " class='active'" : "") .
         "><a href='$href'>$label</a></li>";
     }, array_keys($menu_items), $menu_items));
-  if ( $my_account->request_validator ) $m4 = "<li><a href='requests.php'>Žiadosti</a></li>";
+  $session_message = "";
+  if ( array_key_exists("message", $_SESSION) ) {
+    $session_message = "<div class='content'>".
+      message($_SESSION["message"]["type"],
+        $_SESSION["message"]["text"], $_SESSION["message"]["hidder"]).
+      "</div>";
+    unset($_SESSION["message"]);
+  }
 
   return "
   <!DOCTYPE html>
@@ -58,16 +68,17 @@ function print_header() {
       <meta charset='utf-8'>
       <meta name='viewport' content='width=device-width'>
       <meta name='author' content='TEAM UNKNOWNS - TIS 2017/2018'>
-      <link rel='stylesheet' type='text/css' href='//fonts.googleapis.com/css?family=Ubuntu:400,400i,700,700i|Open+Sans:400,700&amp;subset=latin,latin-ext' media='all'>
+      <link rel='stylesheet' type='text/css' href='//fonts.googleapis.com/css?family=Ubuntu:400,400i,700,700i|Open+Sans:400,400i,700&amp;subset=latin,latin-ext' media='all'>
       <link rel='shortcut icon' href='image/favicon.ico' type='image/x-icon'>
-      <link rel='stylesheet' href='style/main.css' type='text/css'>
+      <link rel='stylesheet' href='style/main.css?${sha1sums['main.css']}' type='text/css'>
       <script>
         var user_id = 0;
         var m = $actual_month;
         var y = $actual_year;
       </script>
       <script src='script/jquery2.min.js'></script>
-      <script src='script/main.js'></script>
+
+      <script src='script/main.js?${sha1sums['main.js']}'></script>
       <title>Dochádzka KAI</title>
     </head>
 
@@ -91,6 +102,7 @@ function print_header() {
           </ul>
         </nav>
       </header>
+      $session_message
   ";
 }
 
