@@ -91,6 +91,7 @@ header .logged_panel > .name { padding: 0px 15px; font-size: 14px; }
 header .logged_panel > .name > span { color: #B3231B; padding-left: 5px; }
 header .logged_panel > a { font-size: 16px; }
 header .logged_panel > a > span { padding: 0px 15px; }
+header .logged_panel .personal_id { cursor: auto; -webkit-user-select: text; -khtml-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
 
 nav { background-color: rgba(0,0,0,0.4); width: 100%; }
 nav ul { padding: 5px 10px; max-width: 1200px; margin: 0px auto; font-weight: bold; text-transform: uppercase; font-size: 14px; }
@@ -207,7 +208,7 @@ font-size: 18px; font-weight: bold;}
 
 #users .table .person { padding: 5px 15px; background-color: #EEE; margin: 2px 0px; }
 #users .table .person:hover { background-color: #CCC; }
-#users .table .person .personal_id { color: #888; }
+#users .table .person .personal_id { color: #888; cursor: auto; -webkit-user-select: text; -khtml-user-select: text; -moz-user-select: text; -ms-user-select: text; user-select: text; }
 #users .table .person .icons { float: right; font-size: 18px; }
 #users .table .person .icons .fa { margin-left: 25px; vertical-align: top; }
 #users .table .person .icons .fa-edit { color: #008; font-size: 20px; }
