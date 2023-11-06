@@ -20,10 +20,21 @@ class User {
   var $user = false, $request_validator = false, $secretary = false, $admin = false, $privileged = false;
 
   static function get( $personal_id ) {
-    global $conn, $request_validators;
+    global $conn;
+    $sql = $conn->query("SELECT * FROM users WHERE personal_id = '$personal_id'");
+    return User::_from_sql($sql);
+  }
+
+  static function get_by_id( $id ) {
+    global $conn;
+    $sql = $conn->query("SELECT * FROM users WHERE id = '$id'");
+    return User::_from_sql($sql);
+  }
+
+  static function _from_sql( $sql ) {
+    global $request_validators;
 
     $user = new User;
-    $sql = $conn->query("SELECT * FROM users WHERE personal_id = '$personal_id'");
 
     if ( $u = $sql->fetch_assoc() ) {
       $user->username = $u['username'];
