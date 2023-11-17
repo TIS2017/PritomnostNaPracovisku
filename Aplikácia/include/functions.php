@@ -118,6 +118,15 @@ function month_plus( $year, $month ) {
   return [$year_plus, $month_plus];
 }
 
+function get_all_months() {
+  $all_months = 0;
+  if ( isset( $_GET["all_months"] ) ) {
+    $all_months = intval( $_GET["all_months"] );
+    if ( $all_months != 0 && $all_months != 1 ) $all_months = 0;
+  }
+  return $all_months;
+}
+
 function first_char( $str ) {
   return mb_substr($str, 0, 1, "utf-8");
 }
