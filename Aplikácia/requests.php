@@ -16,10 +16,15 @@ $users = User::create_all_users();
 $year = get_year();
 $year_minus = $year - 1;
 $year_plus = $year + 1;
+$all_months = get_all_months();
+
+$only_recent = "";
+if ($all_months != 1)
+  $only_recent = " AND (datediff(Now(), date_time) < 35)";
 
 $sql = $conn->query("SELECT id, user_id, date_time, from_time, to_time, description, type, confirmation,
                     (SELECT u.status FROM users AS u WHERE u.id = user_id) AS user_status
-                    FROM absence WHERE (type = '".ABSENCE_TRAVEL."' OR type = '".ABSENCE_WORKFROMHOME."') AND YEAR(date_time) = '$year'
+                    FROM absence WHERE (type = '".ABSENCE_TRAVEL."' OR type = '".ABSENCE_WORKFROMHOME."') AND YEAR(date_time) = '$year'" . $only_recent . "
                     HAVING user_status > 0 ORDER BY confirmation asc, date_time desc");
 
 $str = "";
@@ -33,6 +38,6 @@ if ( !$str )
   $str = print_terms_table_row_empty();
 
 
-echo print_header() . print_requests( $year, $year_minus, $year_plus, $str ) . print_footer();
+echo print_header() . print_requests( $year, $year_minus, $year_plus, $str, $all_months ) . print_footer();
 
 ?>

@@ -87,6 +87,10 @@ class Day {
     return true;
   }
 
+  static function header_encode($content) {
+    return '=?UTF-8?B?' . base64_encode($content) . '?=';
+  }
+
   function insert() {
     global $conn, $request_validators, $sk_types, $main_url, $sending_mails;
 
@@ -99,14 +103,21 @@ class Day {
     if ( $sql->execute() ) {
       if ( $sending_mails ) {
         $validator = User::get($request_validators[0]);
+        $requestor = User::get_by_id($this->user_id);
 
-        $email = $validator->email;
+	$email = $validator->email;
         $headers  = 'MIME-Version: 1.0' . "\r\n";
         $headers .= 'Content-type: text/html; charset=UTF-8' . "\r\n";
-        $headers .= 'From: noreply@pritomnost.dai.fmph.uniba.sk' . "\r\n";
-        $text = "Nová žiadosť na schválenie. <br> Typ: " . $sk_types[$this->type] . " <br> Dátum: " . sk_format_date($this->date) .
-                "<br> Pre schválenie pokračujte na adresu: <a href='$main_url/requests.php'>$main_url/requests.php</a>";
-        mail($email, "DOCHÁDZKY (" . sk_format_date($this->date) . ")", $text, $headers);
+        $headers .= 'From: ' . Day::header_encode('Prítomnosť') . ' <noreply@pritomnost.dai.fmph.uniba.sk>' . "\r\n";
+	$subject = "Žiadosť o schválenie neprítomnosti (" . sk_format_date($this->date) . ")";
+        $text = "<p>Nová žiadosť na schválenie.</p>\r\n" .
+            "<dl>\r\n" .
+            "<dt>Žiadateľ*ka:</dt> <dd>" . $requestor->name . " " . $requestor->surname . "</dd>\r\n" .
+            "<dt>Typ neprítomnosti:</dt> <dd>" . $sk_types[$this->type] . " </dd>\r\n" .
+            "<dt>Dátum: </dt> <dd>" . sk_format_date($this->date) . "</dd>\r\n" .
+            "</dl>\r\n" .
+            "<p>Pre schválenie pokračujte na adresu: <a href='$main_url/requests.php'>$main_url/requests.php</a></p>";
+        mail($email, Day::header_encode($subject), $text, $headers);
       }
       return true;
     }
