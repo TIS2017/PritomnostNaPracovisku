@@ -28,7 +28,8 @@ $sk_types = [
     4 => "Práca doma",
     5 => "Iná neprítomnosť",
     6 => "Materská dovolenka",
-    7 => "Rodičovská dovolenka"
+    7 => "Rodičovská dovolenka",
+    8 => "Neplatené voľno"
 ];
 
 const ABSENCE_ILL = 1;
@@ -38,6 +39,7 @@ const ABSENCE_WORKFROMHOME = 4;
 const ABSENCE_OTHER = 5;
 const ABSENCE_MATERNAL = 6;
 const ABSENCE_PARENTAL = 7;
+const ABSENCE_UNPAID_LEAVE = 8;
 
 $actual_year = intval(date("Y"));
 $actual_month = intval(date("n"));
