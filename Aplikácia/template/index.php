@@ -1,8 +1,8 @@
 <?php
 
-function print_index_person ( $id, $name, $surname, $personal_id ) {
+function print_index_person ( $id, $name, $surname, $personal_id, $employee_type ) {
   return "
-  <div class='value person' id='person_$id' onclick='overview_set_user($id);'>
+  <div class='value person' id='person_$id' data-type='{$employee_type}' onclick='overview_set_user($id);'>
     $surname $name <span class='personal_id'>$personal_id</span>
   </div>
   ";
@@ -18,11 +18,20 @@ function print_index( $persons, $y, $m ) {
       Neprítomnosť z&nbsp;ostatných dôvodov je možné zadávať do konca
       mesiaca." )
     : "";
+
+    $filter_html = '
+    <select id="employee_filter" onchange="filter_employees()">
+      <option value="all">Všetci</option>
+      <option value="employee">Zamestnanci</option>
+      <option value="phd">Doktorandi</option>
+    </select>
+    ';
+
   return "
   <div class='content' id='overview'>
     $deadline_notice
     <div class='side_table'>
-      <div class='title'>Prehľad zamestnancov</div>
+      <div class='title'>Prehľad zamestnancov $filter_html</div>
       $persons
     </div>
 

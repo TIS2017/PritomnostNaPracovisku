@@ -282,6 +282,10 @@ class User {
     return $conn->query("UPDATE users SET password = '$new_password_hash' WHERE id = '$this->id'") === TRUE;
 
   }
+
+  function isPostgradual() {
+    return (string)$this->personal_id[0] == "9";
+  }
 }
 
 ?>

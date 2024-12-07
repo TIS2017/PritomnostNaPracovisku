@@ -285,3 +285,16 @@ function edit_profile( p_id ) {
     }
   );
 }
+
+function filter_employees() {
+  const filterValue = document.getElementById('employee_filter').value;
+  const users = document.getElementsByClassName('value person');
+  
+  Array.from(users).forEach(user => {
+      if (filterValue === 'all') {
+          user.style.display = 'block';
+      } else {
+          user.style.display = user.dataset.type === filterValue ? 'block' : 'none';
+      }
+  });
+}
