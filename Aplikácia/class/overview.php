@@ -87,14 +87,17 @@ class Overview {
             $state = "";
             if ( !$a->confirmation ) $state = " <strong>(zatiaľ neschválené)</strong>";
 
+            $user = $users[ $a->user_id ];
+            $employee_type = $user->isPostgraduate() ? "phd" : "employee";
             $vals .=  print_overview_box_value(
               $a->absence_id,
-              $this->remove_button( $a, $users[ $a->user_id ]->name, $users[ $a->user_id ]->surname ),
-              $users[ $a->user_id ]->name . $state,
-              $users[ $a->user_id ]->surname,
+              $this->remove_button( $a, $user->name, $user->surname ),
+              $user->name . $state,
+              $user->surname,
               $sk_types[ $a->type ],
               display_time( $a->from_time, $a->to_time ),
-              $a->description
+              $a->description,
+              $employee_type
             );
           }
         }
