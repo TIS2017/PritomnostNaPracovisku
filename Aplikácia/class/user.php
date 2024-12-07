@@ -283,7 +283,7 @@ class User {
 
   }
 
-  function isPostgradual() {
+  function isPostgraduate() {
     return (string)$this->personal_id[0] == "9";
   }
 }

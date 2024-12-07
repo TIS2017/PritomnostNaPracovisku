@@ -19,7 +19,7 @@ foreach ( $users as $u ) {
     $p_id = "";
     if ( $my_account->privileged ) $p_id = "#" . $u->personal_id;
 
-    $employee_type = $u->isPostgradual() ? "phd" : "employee";
+    $employee_type = $u->isPostgraduate() ? "phd" : "employee";
     $persons .= print_index_person ( $u->id, $u->name, $u->surname, $p_id, $employee_type );
   }
 }
