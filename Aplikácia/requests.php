@@ -19,8 +19,9 @@ $year_plus = $year + 1;
 $all_months = get_all_months();
 
 $only_recent = "";
-if ($all_months != 1)
-  $only_recent = " AND (datediff(Now(), date_time) < 35)";
+if ($all_months != 1){
+  $only_recent = " AND (MONTH(date_time) = MONTH(Now()))";
+}
 
 $sql = $conn->query("SELECT id, user_id, date_time, from_time, to_time, description, type, confirmation,
                     (SELECT u.status FROM users AS u WHERE u.id = user_id) AS user_status
@@ -32,6 +33,9 @@ while ( $r = $sql->fetch_assoc() ) {
   $user_name = $users[ $r["user_id"] ]->name . " " . $users[ $r["user_id"] ]->surname;
   $time = display_time( $r["from_time"], $r["to_time"] );
 
+  $absence_date = date("Y-m-d", strtotime($r['date_time']));
+  $current_date = date("Y-m-d");
+  if($r["confirmation"] == 1 || $absence_date >= $current_date)
   $str .= print_requests_table_row ( $r["id"], sk_format_date( $r['date_time'] ), $time, $user_name, $sk_types[$r["type"]], $r["description"], $r["confirmation"] );
 }
 if ( !$str )
