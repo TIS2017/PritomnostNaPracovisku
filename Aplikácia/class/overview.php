@@ -89,9 +89,13 @@ class Overview {
 
             $user = $users[ $a->user_id ];
             $employee_type = $user->isPostgraduate() ? "phd" : "employee";
+            $removeButton = '';
+            if ($a->type != ABSENCE_TRAVEL) {
+              $removeButton = $this->remove_button( $a, $user->name, $user->surname );
+            }
             $vals .=  print_overview_box_value(
               $a->absence_id,
-              $this->remove_button( $a, $user->name, $user->surname ),
+              $removeButton,
               $user->name . $state,
               $user->surname,
               $sk_types[ $a->type ],
