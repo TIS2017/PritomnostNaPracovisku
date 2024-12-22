@@ -1,7 +1,9 @@
 <?php
-require_once 'config.php';
-require_once 'classes/User.php';
-require_once 'classes/Overview.php';
+
+require_once '../include/config.php';
+require_once '../include/db_utils.php';
+require_once '../class/user.php';
+require_once '../class/overview.php';
 
 // kontrola statusu prihlaseneho pouzivatela
 $my_account = User::login(User::STATUS_SECRETARY);
