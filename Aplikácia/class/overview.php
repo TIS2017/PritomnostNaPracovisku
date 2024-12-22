@@ -58,12 +58,17 @@ class Overview {
     // zobrazit titulok s posuvacom mesiacov ??
     if ( $title ) {
       // vypis nazvu mesiaca a sipok
+      $reports = '';
+      if ($my_account->secretary && $this->user_id == 0) {
+        $reports = print_report_link( $this->m, $this->y);
+        $reports .= print_report_link($this->m, $this->y, "gastro-report.php", "Stiahnuť výkaz stravného");
+      }
+      
       $str .= print_overview_title(
         $this->m, $this->y,
         // stiahnutie vykazu
-        ($my_account->secretary && $this->user_id == 0)
-          ? print_report_link( $this->m, $this->y )
-          : '');
+        $reports
+      );
       // vypis mena ak je zapnuty filter
       if ( $this->user_id != 0 )
         $str .= print_overview_filter ( $users[$this->user_id]->name, $users[$this->user_id]->surname );
