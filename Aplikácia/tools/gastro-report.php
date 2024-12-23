@@ -19,7 +19,7 @@ $report_data = [
     "personal_id_prefix" => $personal_id_prefix,
     "employees" => User::get_users(),
     "public_holidays" => Overview::get_public_holidays($year, $month),
-    "absences" => Overview::get_absences($year, $month)
+    "absences" => Overview::get_absences_gastro($year, $month)
 ];
 
 $jsonData = json_encode($report_data);
