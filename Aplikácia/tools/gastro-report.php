@@ -19,7 +19,8 @@ $report_data = [
     "personal_id_prefix" => $personal_id_prefix,
     "employees" => User::get_users(),
     "public_holidays" => Overview::get_public_holidays($year, $month),
-    "absences" => Overview::get_absences_gastro($year, $month)
+    "absences" => Overview::get_absences_gastro($year, $month),
+    "holidays_budget" => Overview::get_holidays_budget($year, $month)
 ];
 
 $jsonData = json_encode($report_data);
@@ -40,7 +41,7 @@ $descriptorSpec = [
     2 => ['pipe', 'w']     // stderr
 ];
 
-$process = proc_open("./gastro-report.py", $descriptorSpec, $pipes);
+$process = proc_open("./gastro_report.py", $descriptorSpec, $pipes);
 
 if (is_resource($process)) {
     fclose($pipes[2]);

@@ -177,14 +177,10 @@ class Overview {
     
     $regular = User::STATUS_REGULAR;
     
-    if (!$query1->bind_param("iii", $lastYear, $lastMonth, $regular)) {
-        return $conn->error;
-    }
+    if (!$query1->bind_param("iii", $lastYear, $lastMonth, $regular)) return $conn->error;
     $result1 = execute_stm_and_fetch_all($query1);
     
-    if (!$query2->bind_param("iii", $year, $month, $regular)) {
-        return $conn->error;
-    }
+    if (!$query2->bind_param("iii", $year, $month, $regular)) return $conn->error;
     $result2 = execute_stm_and_fetch_all($query2);
     
     return array_merge($result1, $result2);
@@ -201,6 +197,39 @@ class Overview {
     return execute_stm_and_fetch_all( $stm );
   }
 
+  static function get_holidays_budget_data($year) {
+    global $conn;
+        
+    $query = $conn->prepare("
+        SELECT
+          holidays_budget.*
+        FROM
+	        holidays_budget
+	      JOIN users ON user_id = users.id
+        WHERE
+	        `year` = ?
+          AND users.status >= ?
+        ");
+    
+    if (!$query) return $conn->error;
+    
+    $regular = User::STATUS_REGULAR;
+    if (!$query->bind_param("ii", $year, $regular))  return $conn->error;
+    
+    return execute_stm_and_fetch_all($query);    
+  }
+
+  static function get_holidays_budget($year, $month) {
+    $lastYear = $month > 1 ? $year : $year - 1;
+    
+    if ($lastYear === $year)
+      return Overview::get_holidays_budget_data($year);
+
+    $result1 = Overview::get_holidays_budget_data($lastYear);
+    $result2 = Overview::get_holidays_budget_data($year);
+    return array_merge($result1, $result2);
+  }
+  
 }
 
 ?>
