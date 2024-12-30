@@ -49,6 +49,7 @@ class Absence:
     PRACA_DOMA = 'práca doma'
     PRACOVNA_CESTA = 'pracovná cesta'
     INA_NEPRITOMNOST = 'iná neprítomnosť'
+    NEPLATENE_VOLNO = 'neplatené voľno'
 
     counts_as_work = {
         SKOLENIE: True,
@@ -64,7 +65,8 @@ class Absence:
         4: PRACA_DOMA,
         5: INA_NEPRITOMNOST,
         6: MATERSKA,
-        7: RODICOVSKA
+        7: RODICOVSKA,
+        8: NEPLATENE_VOLNO
     }
 
     abbreviation = {
@@ -83,7 +85,8 @@ class Absence:
         VSEOBECNE_PREKAZKY: 'Z',
         NAHRADNE_VOLNO: 'Nv',
         SKOLENIE: 'Šk',
-        STUDIUM: 'Št'
+        STUDIUM: 'Št',
+        NEPLATENE_VOLNO: 'N'
     }
 
 class OverviewSheetBuilder:
@@ -109,7 +112,8 @@ class OverviewSheetBuilder:
         Absence.NEOSPRAVEDLNENA,
         Absence.MATERSKA,
         Absence.RODICOVSKA,
-        Absence.OSTATNE
+        Absence.OSTATNE,
+        Absence.NEPLATENE_VOLNO
     ]
     TOTAL_ABSENCE_DAYS_COL = FIRST_ABSENCE_KIND_COL + len(ABSENCE_KINDS_ORDER)
     CATEGORIZE_MANUALLY_COL = TOTAL_ABSENCE_DAYS_COL + 1
