@@ -10,7 +10,7 @@ from calendar import Calendar
 from datetime import time, timedelta
 from math import ceil
 from os.path import dirname, join
-from copy import copy˝
+from copy import copy
 
 def index_by(key_prop, array_of_dicts):
     indexed = {}
