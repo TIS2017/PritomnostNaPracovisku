@@ -155,39 +155,28 @@ class Overview {
     $lastMonth = $month > 1 ? $month - 1 : 12;
     $lastYear = $month > 1 ? $year : $year - 1;
     
-    // First query: 21st to end of last month
-    $query1 = $conn->prepare("
-        SELECT user_id, DAY(date_time) as day, from_time, to_time,
-            type, description, public
-        FROM absence JOIN users ON user_id = users.id
-        WHERE YEAR(date_time) = ? 
-            AND MONTH(date_time) = ?
-            AND DAY(date_time) >= 21
-            AND users.status >= ?
+    $query = $conn->prepare("
+      SELECT user_id, DAY(date_time) AS day, from_time, to_time, type, description, public
+      FROM absence JOIN users ON user_id = users.id
+      WHERE YEAR(date_time) = ?
+        AND MONTH(date_time) = ?
+        AND DAY(date_time) >= 21
+        AND users.status >= ?
+      UNION
+      SELECT user_id, DAY(date_time) AS day, from_time, to_time, type, description, public
+      FROM absence JOIN users ON user_id = users.id
+      WHERE YEAR(date_time) = ?
+        AND MONTH(date_time) = ?
+        AND DAY(date_time) <= 20
+        AND users.status >= ?
     ");
     
-    // Second query: 1st to 20th of current month
-    $query2 = $conn->prepare("
-        SELECT user_id, DAY(date_time) as day, from_time, to_time,
-            type, description, public
-        FROM absence JOIN users ON user_id = users.id
-        WHERE YEAR(date_time) = ?
-            AND MONTH(date_time) = ?
-            AND DAY(date_time) <= 20
-            AND users.status >= ?
-    ");
-    
-    if (!$query1 || !$query2) return $conn->error;
+    if (!$query) return $conn->error;
     
     $regular = User::STATUS_REGULAR;
     
-    if (!$query1->bind_param("iii", $lastYear, $lastMonth, $regular)) return $conn->error;
-    $result1 = execute_stm_and_fetch_all($query1);
-    
-    if (!$query2->bind_param("iii", $year, $month, $regular)) return $conn->error;
-    $result2 = execute_stm_and_fetch_all($query2);
-    
-    return array_merge($result1, $result2);
+    if (!$query->bind_param("iiiiii", $lastYear, $lastMonth, $regular, $year, $month, $regular)) return $conn->error;
+    return execute_stm_and_fetch_all($query);
 }
 
   static function get_public_holidays( $year, $month ) {
