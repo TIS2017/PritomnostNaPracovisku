@@ -97,16 +97,21 @@ class UserReportBuilder:
             return 0.00
     
     def getSubtrahend(self, employeeID):
+        count = 0.00
         absences = self.absences.get(employeeID, {})
         if not absences:
-            return 0.00
+            return count
         
         absenceDays = set(absences.keys())
         holidayDays = set(self.public_holidays.keys())
-        if not holidayDays:
-            return float(len(absenceDays))
+        
+        for day in absenceDays:   
+            if isWeekend(getDate(self.year, self.month, day)):
+                continue
+            if not holidayDays or day not in holidayDays:
+                count += 1.00
 
-        return float(len(absenceDays) - len(holidayDays))
+        return count
     
     def getDiff(self, ws, row):
         return ws.cell(row=row, column=5).value - ws.cell(row=row, column=6).value

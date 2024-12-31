@@ -7,7 +7,7 @@ from openpyxl.styles import PatternFill, Color
 from openpyxl.comments import Comment
 import re
 from calendar import Calendar
-from datetime import time, timedelta
+from datetime import time, timedelta, datetime
 from math import ceil
 from os.path import dirname, join
 from copy import copy
@@ -29,3 +29,14 @@ def delta_from_time(t: time) -> timedelta:
 
 def delta_between_times(start: time, end: time) -> timedelta:
     return delta_from_time(end) - delta_from_time(start)
+
+def getDate(year, month, day):
+    if day < 21:
+        return datetime(year, month, day)
+    
+    lastMonth = month - 1 if month > 1 else 12
+    lastYear = year if month > 1 else year - 1
+    return datetime(lastYear, lastMonth, day)
+
+def isWeekend(date):
+        return date.weekday() > 4
