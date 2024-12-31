@@ -104,7 +104,7 @@ class UserReportBuilder:
         absenceDays = set(absences.keys())
         holidayDays = set(self.public_holidays.keys())
         if not holidayDays:
-            return len(absenceDays)
+            return float(len(absenceDays))
 
         return float(len(absenceDays) - len(holidayDays))
     
