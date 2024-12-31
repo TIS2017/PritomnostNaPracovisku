@@ -41,7 +41,7 @@ file_put_contents($inpath, json_encode($report_data));
 #   ["run", "--no-capture-output",
 #    "./monthly_report.py", $inpath, $outpath
 #   ]);
-exec_or_die("./monthly_report.py", [ $inpath, $outpath ]);
+exec_or_die("./monthly-report.py", [ $inpath, $outpath ]);
 
 header("Content-Description: Vykaz dochadzky za $year-$month");
 header('Content-Type: application/octet-stream');

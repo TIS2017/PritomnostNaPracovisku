@@ -39,7 +39,7 @@ $descriptorSpec = [
     2 => ['pipe', 'w']               // stderr
 ];
 
-$process = proc_open(["./gastro_report.py", $tempOutput], $descriptorSpec, $pipes);
+$process = proc_open(["./gastro-report.py", $tempOutput], $descriptorSpec, $pipes);
 
 if (is_resource($process)) {
     while (!feof($pipes[2])) {
