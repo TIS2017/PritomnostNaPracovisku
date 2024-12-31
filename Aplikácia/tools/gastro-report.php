@@ -25,25 +25,29 @@ $report_data = [
 
 $jsonData = json_encode($report_data);
 
-$inputStream = fopen('php://memory', 'r+');
-fwrite($inputStream, $jsonData);
-rewind($inputStream);
+$tempInput = tempnam(sys_get_temp_dir(), 'gastro_input_');
+$tempOutput = tempnam(sys_get_temp_dir(), 'gastro_output_');
 
-$outputStream = fopen('php://temp', 'r+');
+file_put_contents($tempInput, $jsonData);
 
 $outfname = preg_replace('/[^a-zA-Z0-9.]/', '-',
-    sprintf("%02d-gastro-%02d.xlsx", $month, $year % 100)
+    sprintf("gastro-%02d/%02d.xlsx", $month, $year % 100)
 );
 
 $descriptorSpec = [
-    0 => $inputStream,     // stdin
-    1 => $outputStream,    // stdout
-    2 => ['pipe', 'w']     // stderr
+    0 => ['file', $tempInput, 'r'],  // stdin
+    2 => ['pipe', 'w']               // stderr
 ];
 
-$process = proc_open("./gastro_report.py", $descriptorSpec, $pipes);
+$process = proc_open(["./gastro_report.py", $tempOutput], $descriptorSpec, $pipes);
 
 if (is_resource($process)) {
+    while (!feof($pipes[2])) {
+        $errorOutput = fgets($pipes[2]);
+        if ($errorOutput) {
+            error_log("Python script error: " . $errorOutput);
+        }
+    }
     fclose($pipes[2]);
     
     header("Content-Description: Vykaz stravneho za $year-$month");
@@ -53,12 +57,10 @@ if (is_resource($process)) {
     header('Cache-Control: must-revalidate');
     header('Pragma: public');
     
-    rewind($outputStream);
-    fpassthru($outputStream);
+    readfile($tempOutput);
     
-    fclose($inputStream);
-    fclose($outputStream);
-    
+    unlink($tempInput);
+    unlink($tempOutput);
     proc_close($process);
 } else {
     header('HTTP/1.1 500 Internal Server Error');
