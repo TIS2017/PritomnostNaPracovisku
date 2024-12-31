@@ -1,26 +1,28 @@
 #!/usr/bin/env python3
 
-from monthly_report import *
-from copy import copy
+from utils import *
 
 class UserReportBuilder:
     TEMPLATE_FILENAME = 'gastro-report-template.xlsx'
     TEMPLATE_PATH = join(dirname(__file__), TEMPLATE_FILENAME)
     TEMPLATE_SHEET_TITLE = 'Šablóna'
     SHEET_TITLE_FORMAT = 'Hárok{}'
+    FOREIGN_ABSENCE_DESCRIPTION = 'Zahraničná pracovná cesta'
+    DOMESTIC_ABSENCE_DESCRIPTION = 'Tuzemská pracovná cesta'
     
     def __init__(self, data):
         self.year = data['year']
         self.month = data['month']
         self.month_sk = data['month_sk']
-        self.personal_id_prefix = data['personal_id_prefix']
         self.employees = data['employees']
         self.public_holidays = index_by('day', data['public_holidays'])
-        self.absences = dict((eid, index_by('day', eabs))
+        self.absences = dict(
+            (eid, index_by('day', eabs))
             for (eid, eabs) in index_by('user_id', data['absences']).items()
         )
-        self.holidays_budget = dict((eid, index_by('year', eabs))
-            for (eid, eabs) in index_by('user_id', data['holidays_budget']).items()
+        self.holidays_budget = dict(
+            (eid, index_by('year', yr))
+            for (eid, yr) in index_by('user_id', data['holidays_budget']).items()
         )
         
     def build(self, outputPath):
@@ -47,14 +49,10 @@ class UserReportBuilder:
             ws.cell(row=currentRow, column=2).value = employee.get('personal_id')
             ws.cell(row=currentRow, column=3).value = employee.get('surname')
             ws.cell(row=currentRow, column=4).value = employee.get('name')
-            ws.cell(row=currentRow, column=5).value = 0
-            ws.cell(row=currentRow, column=6).value = 0.00
-            ws.cell(row=currentRow, column=7).value = 0
-            ws.cell(row=currentRow, column=8).value = ''
-            #ws.cell(row=currentRow, column=5).value = self.getBudget(employee.get('user_id'), self.year)
-            #ws.cell(row=currentRow, column=6).value = self.getSub(employee.get('user_id'))
-            #ws.cell(row=currentRow, column=7).value = ws.cell(row=currentRow, column=5).value - ws.cell(row=currentRow, column=6).value
-            #ws.cell(row=currentRow, column=8).value = self.getNote(employee.get('user_id'))
+            ws.cell(row=currentRow, column=5).value = self.getBudget(employee.get('id'), self.year)
+            ws.cell(row=currentRow, column=6).value = self.getSubtrahend(employee.get('id'))
+            ws.cell(row=currentRow, column=7).value = self.getDiff(ws, currentRow)
+            ws.cell(row=currentRow, column=8).value = self.getNote(employee.get('id'))
         
         return templateRow + len(self.employees) - 1
 
@@ -67,7 +65,6 @@ class UserReportBuilder:
 
         ws.cell(totalsRow, 5).value = narok
         ws.cell(totalsRow, 7).value = zaloha
-
 
     def insertRows(self, ws, insertRow, numRows):
         mergedRanges = list(ws.merged_cells.ranges)
@@ -93,14 +90,42 @@ class UserReportBuilder:
             else:
                 ws.merge_cells(str(mergedRange))
 
-    def getBudget(self, employee_id, year):
-        return self.holidays_budget[employee_id].get(year, 0)
+    def getBudget(self, employeeID, year):
+        try:
+            return float(self.holidays_budget.get(employeeID, {}).get(year, {})[0].get('num'))
+        except (IndexError, KeyError, TypeError, ValueError):
+            return 0.00
     
-    def getSub(self, employee_id):
-        pass
+    def getSubtrahend(self, employeeID):
+        absences = self.absences.get(employeeID, {})
+        if not absences:
+            return 0.00
+        
+        absenceDays = set(absences.keys())
+        holidayDays = set(self.public_holidays.keys())
+        if not holidayDays:
+            return len(absenceDays)
 
-    def getNote(self, employee_id):
-        pass
+        return float(len(absenceDays) - len(holidayDays))
+    
+    def getDiff(self, ws, row):
+        return ws.cell(row=row, column=5).value - ws.cell(row=row, column=6).value
+
+    def getNote(self, employeeID):
+        absences = self.absences.get(employeeID, {})
+        if not absences:
+            return ''
+
+        # at most one absence per day
+        descriptions = {absence[0]['description'] for absence in absences.values()}
+
+        note = list()
+        if self.FOREIGN_ABSENCE_DESCRIPTION in descriptions:
+            note.append('zpc')
+        if self.DOMESTIC_ABSENCE_DESCRIPTION in descriptions:
+            note.append('tpc')
+
+        return ', '.join(note)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
