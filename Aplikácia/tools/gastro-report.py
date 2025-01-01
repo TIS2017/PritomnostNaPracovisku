@@ -7,8 +7,11 @@ class UserReportBuilder:
     TEMPLATE_PATH = join(dirname(__file__), TEMPLATE_FILENAME)
     TEMPLATE_SHEET_TITLE = 'Šablóna'
     SHEET_TITLE_FORMAT = 'Hárok{}'
+    DEPARTMENT = '107240-KAI'
     FOREIGN_ABSENCE_DESCRIPTION = 'Zahraničná pracovná cesta'
     DOMESTIC_ABSENCE_DESCRIPTION = 'Tuzemská pracovná cesta'
+    SICK_LEAVE = 1
+    BUSINESS_TRIP = 2
     
     def __init__(self, data):
         self.year = data['year']
@@ -20,10 +23,7 @@ class UserReportBuilder:
             (eid, index_by('day', eabs))
             for (eid, eabs) in index_by('user_id', data['absences']).items()
         )
-        self.holidays_budget = dict(
-            (eid, index_by('year', yr))
-            for (eid, yr) in index_by('user_id', data['holidays_budget']).items()
-        )
+        self.workDays = self.getNumberOfWorkDays()
         
     def build(self, outputPath):
         wb = openpyxl.load_workbook(self.TEMPLATE_PATH)
@@ -36,7 +36,7 @@ class UserReportBuilder:
         wb.save(outputPath)
 
     def fillHeader(self, ws):
-        ws['B1'] = '107240-KAI'
+        ws['B1'] = self.DEPARTMENT
         ws['B3'] = f"Obdobie: {self.month_sk} {self.year}"
     
     def fillEmployeeData(self, ws):
@@ -49,7 +49,7 @@ class UserReportBuilder:
             ws.cell(row=currentRow, column=2).value = employee.get('personal_id')
             ws.cell(row=currentRow, column=3).value = employee.get('surname')
             ws.cell(row=currentRow, column=4).value = employee.get('name')
-            ws.cell(row=currentRow, column=5).value = self.getBudget(employee.get('id'), self.year)
+            ws.cell(row=currentRow, column=5).value = self.workDays
             ws.cell(row=currentRow, column=6).value = self.getSubtrahend(employee.get('id'))
             ws.cell(row=currentRow, column=7).value = self.getDiff(ws, currentRow)
             ws.cell(row=currentRow, column=8).value = self.getNote(employee.get('id'))
@@ -90,11 +90,18 @@ class UserReportBuilder:
             else:
                 ws.merge_cells(str(mergedRange))
 
-    def getBudget(self, employeeID, year):
-        try:
-            return float(self.holidays_budget.get(employeeID, {}).get(year, {})[0].get('num'))
-        except (IndexError, KeyError, TypeError, ValueError):
-            return 0.00
+
+    def getNumberOfWorkDays(self):
+        workDays = 0
+        for date in getDates(self.year, self.month):
+            if date.month != self.month:
+                continue
+            if isWeekend(date) or date in self.public_holidays:
+                continue
+
+            workDays += 1
+
+        return workDays
     
     def getSubtrahend(self, employeeID):
         count = 0.00
@@ -108,8 +115,10 @@ class UserReportBuilder:
         for day in absenceDays:   
             if isWeekend(getDate(self.year, self.month, day)):
                 continue
+
             if not holidayDays or day not in holidayDays:
-                count += 1.00
+                if absences.get(day)[0]['type'] == self.SICK_LEAVE or absences.get(day)[0]['type'] == self.BUSINESS_TRIP:
+                    count += 1.00
 
         return count
     

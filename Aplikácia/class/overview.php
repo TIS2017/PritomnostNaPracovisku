@@ -189,33 +189,6 @@ class Overview {
     if ( !$stm->bind_param("ii", $year, $month) ) return [];
     return execute_stm_and_fetch_all( $stm );
   }
-
-  static function get_holidays_budget($year, $month) {
-    global $conn;
-
-    $lastYear = $month > 1 ? $year : $year - 1;
-        
-    $query = $conn->prepare("
-        SELECT holidays_budget.*
-        FROM holidays_budget
-        JOIN users ON user_id = users.id
-        WHERE `year` = ?
-          AND users.status >= ?
-        UNION
-        SELECT holidays_budget.*
-        FROM holidays_budget
-        JOIN users ON user_id = users.id
-        WHERE `year` = ?
-          AND users.status >= ?
-        ");
-    
-    if (!$query) return $conn->error;
-    
-    $regular = User::STATUS_REGULAR;
-    if (!$query->bind_param("iiii", $lastYear, $regular, $year, $regular))  return $conn->error;
-    
-    return execute_stm_and_fetch_all($query);    
-  }
 }
 
 ?>

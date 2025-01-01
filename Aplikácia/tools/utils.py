@@ -40,3 +40,6 @@ def getDate(year, month, day):
 
 def isWeekend(date):
         return date.weekday() > 4
+
+def getDates(year, month):
+    return list(Calendar().itermonthdates(year, month))
