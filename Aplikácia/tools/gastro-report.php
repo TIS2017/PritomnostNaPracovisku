@@ -17,7 +17,7 @@ $report_data = [
     "month" => $month,
     "month_sk" => $sk_months[$month],
     "personal_id_prefix" => $personal_id_prefix,
-    "employees" => User::get_users(),
+    "employees" => User::getUsersForGastroReport(User::STATUS_REGULAR, User::STATUS_ADMINISTRATOR + 1, $year, $month),
     "public_holidays" => Overview::get_public_holidays($year, $month),
     "absences" => Overview::get_absences_gastro($year, $month)
 ];
