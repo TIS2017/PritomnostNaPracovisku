@@ -12,6 +12,9 @@ class UserReportBuilder:
     DOMESTIC_ABSENCE_DESCRIPTION = 'Tuzemská pracovná cesta'
     SICK_LEAVE = 1
     BUSINESS_TRIP = 2
+    TIME_FORMAT = '%H:%M:%S'
+    LEAVE_AFTER = datetime.strptime('13:00:00', TIME_FORMAT)
+    ARRIVE_BEFORE = datetime.strptime('11:00:00', TIME_FORMAT)
     
     def __init__(self, data):
         self.year = data['year']
@@ -119,6 +122,11 @@ class UserReportBuilder:
             if not holidayDays or day not in holidayDays:
                 if absences.get(day)[0]['type'] == self.SICK_LEAVE or absences.get(day)[0]['type'] == self.BUSINESS_TRIP:
                     count += 1.00
+                if absences.get(day)[0]['type'] == self.BUSINESS_TRIP:
+                    fromTime = datetime.strptime(absences.get(day)[0]['from_time'], self.TIME_FORMAT)
+                    toTime = datetime.strptime(absences.get(day)[0]['to_time'], self.TIME_FORMAT)
+                    if fromTime >= self.LEAVE_AFTER or toTime <= self.ARRIVE_BEFORE:
+                        count = max(0, count - 1.00)
 
         return count
     
