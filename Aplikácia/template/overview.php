@@ -15,13 +15,13 @@ function print_overview_title ( $month, $year, $additional_content = "") {
   ";
 }
 
-function print_report_link ( $month, $year ) {
+function print_report_link ( $month, $year, $target = "monthly-report.php", $textDescription = "Stiahnuť výkaz" ) {
   global $main_url;
   $month = urlencode($month);
   $year = urlencode($year);
-  return "<a class='button_submit button_download' href='${main_url}tools/monthly-report.php?month=$month&year=$year'
+  return "<a class='button_submit button_download' href='{$main_url}tools/{$target}?month=$month&year=$year'
       ><i class='fa fa-file-excel-o'></i>
-    Stiahnuť výkaz
+    {$textDescription}
    </a>
   ";
 }
