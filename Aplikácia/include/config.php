@@ -9,10 +9,9 @@ $sending_mails = false;
 // PID používateľov, ktorí schvaľujú prácu doma a pracovné cesty
 $request_validators = [822];
 
-// TODO vo finalnej verzii odkomentovat
-// $printer_host = "print.dai.fmph.uniba.sk";
-// $printer = "dovolenka";
-// $printer_options = ['landscape', 'PageSize=A6'];
+$printer_host = "print.dai.fmph.uniba.sk";
+$printer = "dovolenka";
+$printer_options = ['landscape', 'PageSize=A6'];
 
 $department = 'Katedra aplikovanej informatiky';
 $department_id = '107240';
