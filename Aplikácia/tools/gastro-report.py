@@ -142,9 +142,9 @@ class UserReportBuilder:
         descriptions = {absence[0]['description'] for absence in absences.values()}
 
         note = list()
-        if self.FOREIGN_ABSENCE_DESCRIPTION in descriptions:
+        if any(self.FOREIGN_ABSENCE_DESCRIPTION in description for description in descriptions):
             note.append('zpc')
-        if self.DOMESTIC_ABSENCE_DESCRIPTION in descriptions:
+        if any(self.DOMESTIC_ABSENCE_DESCRIPTION in description for description in descriptions):
             note.append('tpc')
 
         return ', '.join(note)
