@@ -48,17 +48,17 @@ class UserReportBuilder:
 
         for i, employee in enumerate(self.employees):
             currentRow = templateRow + i
+            subtrahend, domesticBusinessTrips, foreignBusinessTrips = self.getSubtrahend(employee.get('id'))
             ws.cell(row=currentRow, column=1).value = i + 1
             ws.cell(row=currentRow, column=2).value = employee.get('personal_id')
             ws.cell(row=currentRow, column=3).value = employee.get('surname')
             ws.cell(row=currentRow, column=4).value = employee.get('name')
             ws.cell(row=currentRow, column=5).value = self.workDays
-            ws.cell(row=currentRow, column=6).value = self.getSubtrahend(employee.get('id'))
+            ws.cell(row=currentRow, column=6).value = subtrahend
             ws.cell(row=currentRow, column=7).value = self.getDiff(ws, currentRow)
-            ws.cell(row=currentRow, column=8).value = self.getNote(employee.get('id'))
-        
-        return templateRow + len(self.employees) - 1
+            ws.cell(row=currentRow, column=8).value = self.getNote(domesticBusinessTrips, foreignBusinessTrips)
 
+        return templateRow + len(self.employees) - 1
 
     def fillTotals(self, ws, lastRow):
         totalsRow = lastRow + 3
@@ -93,7 +93,6 @@ class UserReportBuilder:
             else:
                 ws.merge_cells(str(mergedRange))
 
-
     def getNumberOfWorkDays(self):
         workDays = 0
         for date in getDates(self.year, self.month):
@@ -108,9 +107,11 @@ class UserReportBuilder:
     
     def getSubtrahend(self, employeeID):
         count = 0.00
+        domesticBusinessTripsCount = 0
+        foreignBusinessTripsCount = 0
         absences = self.absences.get(employeeID, {})
         if not absences:
-            return count
+            return (count, domesticBusinessTripsCount, foreignBusinessTripsCount)
         
         absenceDays = set(absences.keys())
         holidayDays = set(self.public_holidays.keys())
@@ -122,41 +123,33 @@ class UserReportBuilder:
             if not holidayDays or day not in holidayDays:
                 if absences.get(day)[0]['type'] == self.SICK_LEAVE or absences.get(day)[0]['type'] == self.BUSINESS_TRIP:
                     count += 1.00
+                    if self.DOMESTIC_ABSENCE_DESCRIPTION in absences.get(day)[0]['description']:
+                        domesticBusinessTripsCount += 1
+                    elif self.FOREIGN_ABSENCE_DESCRIPTION in absences.get(day)[0]['description']:
+                        foreignBusinessTripsCount += 1
+
                 if absences.get(day)[0]['type'] == self.BUSINESS_TRIP:
                     fromTime = datetime.strptime(absences.get(day)[0]['from_time'], self.TIME_FORMAT)
                     toTime = datetime.strptime(absences.get(day)[0]['to_time'], self.TIME_FORMAT)
                     if fromTime >= self.LEAVE_AFTER or toTime <= self.ARRIVE_BEFORE:
                         count = max(0, count - 1.00)
+                        if self.DOMESTIC_ABSENCE_DESCRIPTION in absences.get(day)[0]['description']:
+                            domesticBusinessTripsCount = max(0, domesticBusinessTripsCount - 1)
+                        elif self.FOREIGN_ABSENCE_DESCRIPTION in absences.get(day)[0]['description']:
+                            foreignBusinessTripsCount = max(0, foreignBusinessTripsCount - 1)
 
-        return count
-    
+        return (count, domesticBusinessTripsCount, foreignBusinessTripsCount)
+
     def getDiff(self, ws, row):
         return ws.cell(row=row, column=5).value - ws.cell(row=row, column=6).value
 
-    def getNote(self, employeeID):
-        absences = self.absences.get(employeeID, {})
-        if not absences:
-            return ''
-
-        # at most one absence per day
-        descriptions = {absence[0]['description'] for absence in absences.values()}
-
+    def getNote(self, domesticBusinessTripsCount, foreignBusinessTripsCount):
         note = list()
-        countDomesticBusinessTrips = 0
-        for description in descriptions:
-            if self.DOMESTIC_ABSENCE_DESCRIPTION in description:
-                countDomesticBusinessTrips += 1
-        
-        if countDomesticBusinessTrips > 0:
-            note.append(f'zpc {countDomesticBusinessTrips}')
+        if domesticBusinessTripsCount > 0:
+            note.append(f'tpc {domesticBusinessTripsCount}')
 
-        countForeignBusinessTrips = 0
-        for description in descriptions:
-            if self.FOREIGN_ABSENCE_DESCRIPTION in description:
-                countDomesticBusinessTrips += 1
-
-        if countForeignBusinessTrips > 0:
-            note.append(f'zpc {countForeignBusinessTrips}')
+        if foreignBusinessTripsCount > 0:
+            note.append(f'zpc {foreignBusinessTripsCount}')
 
         return ', '.join(note)
 
