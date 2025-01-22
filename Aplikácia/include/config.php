@@ -2,7 +2,7 @@
 
 require "conn.php";
 
-$main_url = "http://localhost/tis";
+$main_url = "http://localhost:8000/";
 
 $sending_mails = false;
 
