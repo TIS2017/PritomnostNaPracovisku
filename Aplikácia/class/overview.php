@@ -160,14 +160,6 @@ class Overview {
       FROM absence JOIN users ON user_id = users.id
       WHERE YEAR(date_time) = ?
         AND MONTH(date_time) = ?
-        AND DAY(date_time) >= 21
-        AND users.status >= ?
-      UNION
-      SELECT user_id, DAY(date_time) AS day, from_time, to_time, type, description, public
-      FROM absence JOIN users ON user_id = users.id
-      WHERE YEAR(date_time) = ?
-        AND MONTH(date_time) = ?
-        AND DAY(date_time) <= 20
         AND users.status >= ?
     ");
     
@@ -175,7 +167,7 @@ class Overview {
     
     $regular = User::STATUS_REGULAR;
     
-    if (!$query->bind_param("iiiiii", $lastYear, $lastMonth, $regular, $year, $month, $regular)) return $conn->error;
+    if (!$query->bind_param("iii", $lastYear, $lastMonth, $regular)) return $conn->error;
     return execute_stm_and_fetch_all($query);
 }
 
