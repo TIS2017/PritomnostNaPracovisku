@@ -58,12 +58,17 @@ class Overview {
     // zobrazit titulok s posuvacom mesiacov ??
     if ( $title ) {
       // vypis nazvu mesiaca a sipok
+      $reports = '';
+      if ($my_account->secretary && $this->user_id == 0) {
+        $reports = print_report_link( $this->m, $this->y);
+        $reports .= print_report_link($this->m, $this->y, "gastro-report.php", "Stiahnuť výkaz stravného");
+      }
+      
       $str .= print_overview_title(
         $this->m, $this->y,
         // stiahnutie vykazu
-        ($my_account->secretary && $this->user_id == 0)
-          ? print_report_link( $this->m, $this->y )
-          : '');
+        $reports
+      );
       // vypis mena ak je zapnuty filter
       if ( $this->user_id != 0 )
         $str .= print_overview_filter ( $users[$this->user_id]->name, $users[$this->user_id]->surname );
@@ -87,14 +92,21 @@ class Overview {
             $state = "";
             if ( !$a->confirmation ) $state = " <strong>(zatiaľ neschválené)</strong>";
 
+            $user = $users[ $a->user_id ];
+            $employee_type = $user->isPostgraduate() ? "phd" : "employee";
+            $removeButton = '';
+            if ($a->type != ABSENCE_TRAVEL) {
+              $removeButton = $this->remove_button( $a, $user->name, $user->surname );
+            }
             $vals .=  print_overview_box_value(
               $a->absence_id,
-              $this->remove_button( $a, $users[ $a->user_id ]->name, $users[ $a->user_id ]->surname ),
-              $users[ $a->user_id ]->name . $state,
-              $users[ $a->user_id ]->surname,
+              $removeButton,
+              $user->name . $state,
+              $user->surname,
               $sk_types[ $a->type ],
               display_time( $a->from_time, $a->to_time ),
-              $a->description
+              $a->description,
+              $employee_type
             );
           }
         }
@@ -137,6 +149,28 @@ class Overview {
     return execute_stm_and_fetch_all( $stm );
   }
 
+  static function get_absences_gastro($year, $month) {
+    global $conn;
+    
+    $lastMonth = $month > 1 ? $month - 1 : 12;
+    $lastYear = $month > 1 ? $year : $year - 1;
+    
+    $query = $conn->prepare("
+      SELECT user_id, DAY(date_time) AS day, from_time, to_time, type, description, public
+      FROM absence JOIN users ON user_id = users.id
+      WHERE YEAR(date_time) = ?
+        AND MONTH(date_time) = ?
+        AND users.status >= ?
+    ");
+    
+    if (!$query) return $conn->error;
+    
+    $regular = User::STATUS_REGULAR;
+    
+    if (!$query->bind_param("iii", $lastYear, $lastMonth, $regular)) return $conn->error;
+    return execute_stm_and_fetch_all($query);
+}
+
   static function get_public_holidays( $year, $month ) {
     global $conn;
     $stm = $conn->prepare("
@@ -147,7 +181,6 @@ class Overview {
     if ( !$stm->bind_param("ii", $year, $month) ) return [];
     return execute_stm_and_fetch_all( $stm );
   }
-
 }
 
 ?>

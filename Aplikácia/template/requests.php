@@ -8,7 +8,7 @@ function print_requests( $year, $year_minus, $year_plus, $str, $all_months ){
           <a href='requests.php?year=$year_minus&all_months=$all_months' title='$year_minus'><span class='fa fa-chevron-circle-left'></span></a>
           $year&nbsp;&nbsp;&nbsp;
           <a href='requests.php?year=$year_plus&all_months=$all_months' title='$year_plus'><span class='fa fa-chevron-circle-right'></span></a>
-          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [" . (($all_months==1)?'všetky':'iba posledné') . "] <a href='requests.php?year=$year&all_months=" . (($all_months==1)?0:1) . "'>prepnúť</a>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [" . (($all_months==1)?'všetky':'aktuálny mesiac') . "] <a href='requests.php?year=$year&all_months=" . (($all_months==1)?0:1) . "'>prepnúť</a>
       </div>
     </div>
 

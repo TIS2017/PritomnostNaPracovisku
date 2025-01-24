@@ -39,7 +39,7 @@ $outpath = "$tmpdir/$outfname";
 file_put_contents($inpath, json_encode($report_data));
 # exec_or_die("../../../miniconda3/condabin/conda",
 #   ["run", "--no-capture-output",
-#    "./monthly-report.py", $inpath, $outpath
+#    "./monthly_report.py", $inpath, $outpath
 #   ]);
 exec_or_die("./monthly-report.py", [ $inpath, $outpath ]);
 

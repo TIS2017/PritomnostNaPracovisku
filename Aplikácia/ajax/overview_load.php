@@ -33,4 +33,7 @@ $overview = new Overview($year, $month, $pid, $personal_id);
 // vykresli nahlad
 echo $overview->run( $title );
 
+if ($pid === 0)
+    echo '<script>filter_employees();</script>';
+
 ?>

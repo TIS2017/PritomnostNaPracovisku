@@ -285,3 +285,32 @@ function edit_profile( p_id ) {
     }
   );
 }
+
+function edit_element_visibility( filter_value, elements ) {
+  Array.from(elements).forEach(element => {
+    if (filter_value === 'all') {
+        element.style.display = 'block';
+    } else {
+        element.style.display = element.dataset.type === filter_value ? 'block' : 'none';
+    }
+  });
+}
+
+function filter_employees() {
+  const filter_value = document.getElementById('employee_filter').value;
+  const users = document.getElementsByClassName('value person');
+  const absences = document.querySelectorAll('tr[data-type]');
+  const descriptions = document.querySelectorAll('td[data-type]');
+  const boxes = document.getElementsByClassName('box');
+
+  edit_element_visibility(filter_value, users);
+  edit_element_visibility(filter_value, absences);
+  edit_element_visibility(filter_value, descriptions);
+  
+  Array.from(boxes).forEach(box => {
+    const visibleElements = Array.from(box.querySelectorAll('tr[data-type]')).some(element => 
+        element.style.display !== 'none'
+    );
+    box.style.display = visibleElements ? 'block' : 'none';
+  });
+}

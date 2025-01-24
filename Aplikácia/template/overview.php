@@ -15,13 +15,13 @@ function print_overview_title ( $month, $year, $additional_content = "") {
   ";
 }
 
-function print_report_link ( $month, $year ) {
+function print_report_link ( $month, $year, $target = "monthly-report.php", $textDescription = "Stiahnuť výkaz" ) {
   global $main_url;
   $month = urlencode($month);
   $year = urlencode($year);
-  return "<a class='button_submit button_download' href='${main_url}tools/monthly-report.php?month=$month&year=$year'
+  return "<a class='button_submit button_download' href='{$main_url}tools/{$target}?month=$month&year=$year'
       ><i class='fa fa-file-excel-o'></i>
-    Stiahnuť výkaz
+    {$textDescription}
    </a>
   ";
 }
@@ -47,14 +47,14 @@ function print_overview_box ( $month_name, $year, $day, $holiday, $values ) {
   ";
 }
 
-function print_overview_box_value ( $id, $remove_button, $name, $surname = "", $type = "", $time = "", $desc = "" ) {
+function print_overview_box_value($id, $remove_button, $name, $surname = "", $type = "", $time = "", $desc = "", $employee_type = "employee") {
   return "
-  <tr class='value value_$id'>
-    <td class='name' > $remove_button $surname $name </td>
-    <td class='type'> $type </td>
-    <td class='time'> $time </td>
-  </tr>
-  <tr class='desc'><td colspan='3'>$desc</td></tr>
+      <tr class='value value_$id' data-type='{$employee_type}'>
+          <td class='name' > $remove_button $surname $name </td>
+          <td class='type'> $type </td>
+          <td class='time'> $time </td>
+      </tr>
+      <tr class='desc' data-type='{$employee_type}'><td colspan='3' data-type='{$employee_type}'>$desc</td></tr>
   ";
 }
 

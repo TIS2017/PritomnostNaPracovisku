@@ -139,6 +139,47 @@ class User {
     return execute_stm_and_fetch_all( $stm );
   }
 
+  static function getUsersForGastroReport($minStatus = User::STATUS_REGULAR, $maxStatus = 10000, $year, $month) {
+    global $conn;
+    
+    $lastMonth = $month > 1 ? $month - 1 : 12;
+    $lastYear = $month > 1 ? $year : $year - 1;
+    
+    $query = $conn->prepare("
+      SELECT u.*
+      FROM users u
+      WHERE NOT EXISTS (
+          SELECT 1
+          FROM absence a
+          WHERE a.user_id = u.id
+            AND DAY(a.date_time) >= 21
+            AND MONTH(a.date_time) = ?
+            AND YEAR(a.date_time) = ?
+            AND a.type IN(6, 7))
+        AND u.status >= ?
+        AND u.status < ?
+      INTERSECT
+      SELECT u.*
+      FROM users u
+      WHERE NOT EXISTS (
+          SELECT 1
+          FROM absence a
+          WHERE a.user_id = u.id
+            AND DAY(a.date_time) <= 20
+            AND MONTH(a.date_time) = ?
+            AND YEAR(a.date_time) = ?
+            AND a.type IN(6, 7))
+        AND u.status >= ?
+        AND u.status < ?
+      ORDER BY surname
+      ");
+    
+    if (!$query) return $conn->error;
+    
+    if (!$query->bind_param("iiiiiiii", $lastMonth, $lastYear, $minStatus, $maxStatus, $month, $year, $minStatus, $maxStatus)) return $conn->error;
+    return execute_stm_and_fetch_all($query);
+  }
+
   static function create_all_users( $status = User::STATUS_REGULAR ) {
     global $conn;
 
@@ -282,6 +323,11 @@ class User {
     return $conn->query("UPDATE users SET password = '$new_password_hash' WHERE id = '$this->id'") === TRUE;
 
   }
+
+  function isPostgraduate() {
+    return (string)$this->personal_id[0] == "9";
+  }
+
 }
 
 ?>
