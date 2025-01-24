@@ -325,7 +325,8 @@ class User {
   }
 
   function isPostgraduate() {
-    return (string)$this->personal_id[0] == "9";
+	  // graduate students personal ID starts with prefix 1079, while others with different digit after 107
+    return (string)$this->personal_id[3] == "9";
   }
 
 }
